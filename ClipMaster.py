@@ -1,4 +1,6 @@
 from os.path import expanduser
+import os
+import subprocess
 import tkinter
 import requests
 import xml.etree.ElementTree as ElmTree
@@ -130,7 +132,26 @@ def mark_clip():
 
 
 def process_clips():
-    return # process code
+
+    global currentFile
+    global timeIn
+    global timeOut
+    global clip_name
+
+    home = expanduser('~')
+    inPath = home + '/Videos/'
+    outPath = home + '/Videos/'
+
+    lines = [line.rstrip('\n') for line in open(home + '/cut_list.txt')]
+    total_lines = len(lines) - 4
+    x = 0
+
+    while x <= total_lines:
+        subprocess.call(['ffmpeg', '-i', inPath + lines[x], '-ss', lines[x + 2], '-t', lines[x + 3], outPath + lines[x + 1] + ".mp4"])
+        x = x + 4
+
+    os.remove(home + '/cut_list.txt')
+
 
 class TkInterface(tkinter.Tk):
     def __init__(self, parent):
