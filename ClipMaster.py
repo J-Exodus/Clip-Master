@@ -40,21 +40,67 @@ def get_info():
     return [filename, current_time]
 
 
-def format_times(seconds):
+def format_times(seconds, rtn_type):
     m, s = divmod(int(seconds), 60)
     h, m = divmod(m, 60)
 
-    h = str(h).zfill(2)
-    m = str(m).zfill(2)
-    s = str(s).zfill(2)
+    if rtn_type == "base":
+        return h, m, s
+    else:
+        h = str(h).zfill(2)
+        m = str(m).zfill(2)
+        s = str(s).zfill(2)
 
-    return h + ":" + m + ":" + s
+        return h + ":" + m + ":" + s
 
 
-def mark_position():
+def write_to_file():
 
+    global currentFile
     global timeIn
     global timeOut
+    global clip_name
+
+    clip_name = app.entry.get()
+    app.entry.delete(0, 'end')
+    app.save_button.grid_forget()
+    app.entry.grid_forget()
+    app.mark_button.grid(column=1, row=6, padx=20)
+
+    home = expanduser('~')
+    rtn = '\r'
+
+    cut_list = open(home + "/cut_list.txt", 'a')
+    cut_list.write(currentFile + rtn + clip_name + rtn + timeIn + rtn + timeOut + rtn)
+    cut_list.close()
+
+    app.rest_button.grid_forget()
+
+    app.info_label.config(text='Clip successfully saved for processing.')
+    app.info_label.after(3000, app.info_label.config(text='Ready to mark clips...'))
+
+    reset_markers()
+
+
+def reset_markers():
+    global timeIn
+    global timeOut
+    global currentFile
+    global clip_name
+
+    timeIn = '0'
+    timeOut = '0'
+    currentFile = ''
+    clip_name = ''
+
+    app.rest_button.grid_forget()
+    app.info_label.config(text='Ready to mark clips...')
+
+
+def mark_clip():
+    global timeOut
+    global clip_name
+    global timeIn
     global currentFile
 
     file_data = get_info()
@@ -62,46 +108,29 @@ def mark_position():
     if timeIn == '0':
         timeIn = file_data[1]
         currentFile = file_data[0]
+        mark_in = format_times(file_data[1], "base")
+
+        if mark_in[0] == 0 and mark_in[1] == 0:
+            info_msg = "Clip start position marked at {0} seconds.".format(mark_in[2])
+        elif mark_in[0] == 0:
+            info_msg = "Clip start position marked at {0} mins, {1} seconds.".format(mark_in[1], mark_in[2])
+        else:
+            info_msg = "Clip start position marked at {0} hours, {1} mins, {2} seconds.".format(mark_in[0], mark_in[1], mark_in[2])
+        app.info_label.config(text=info_msg)
+        app.rest_button.grid(column=0, row=6, sticky='W', padx=20)
     else:
         timeOut = int(file_data[1]) - int(timeIn)
-        timeIn = format_times(timeIn)
-        timeOut = format_times(timeOut)
-        write_to_file(file_data[0])
-
-
-def write_to_file(file_id):
-
-    global currentFile
-    global timeIn
-    global timeOut
-
-    home = expanduser('~')
-    rtn = '\r'
-
-    cut_list = open(home + "/cut_list.txt", 'a')
-
-    if file_id == currentFile:
-        cut_list.write(timeIn + rtn + timeOut)
-
-
-def mark_clip():
-    global timeOut
-    global clip_name
-
-    mark_position()
-
-    if timeOut != '0':
+        timeIn = format_times(timeIn, '0')
+        timeOut = format_times(timeOut, '0')
+        app.mark_button.grid_forget()
+        app.entry.grid(column=0, row=4, sticky='EW', columnspan=2)
         app.entry.focus_set()
-        clip_name = app.entry.get()
-        app.entry.config(text='')
+        app.save_button.grid(column=1, row=6, padx=20)
+        app.info_label.config(text='Enter a clip name and press the save button.')
 
 
-def get_clip_name():
-    global clip_name
-
-    clip_name = app.entry.get()
-    print(clip_name)
-
+def process_clips():
+    return # process code
 
 class TkInterface(tkinter.Tk):
     def __init__(self, parent):
@@ -110,17 +139,36 @@ class TkInterface(tkinter.Tk):
         self.initialise()
 
     def initialise(self):
+        width = 300
+        height = 200
+        self.geometry('{}x{}'.format(width, height))
         self.grid()
 
         self.entry = tkinter.Entry(self)
-        self.entry.grid(column=0, row=0, sticky='EW')
-#        self.entry.bind("<Return>",lambda command=get_clip_name)
+        self.entry.grid(column=0, row=4, sticky='EW', pady=5, columnspan=2)
+        self.entry.grid_forget()
 
-        mark_button = tkinter.Button(self, text=u"Mark Clip", command=mark_clip)
-        mark_button.grid(column=1, row=0)
+        self.mark_button = tkinter.Button(self, text=u"Mark Clip", command=mark_clip)
+        self.mark_button.grid(column=1, row=6, padx=20)
 
-        info_label = tkinter.Label(self, text='Ready to mark clips...', anchor="w", fg="white", bg="blue")
-        info_label.grid(column=0, row=2, sticky='EW')
+        self.save_button = tkinter.Button(self, text=u"Save clip for processing", command=write_to_file)
+        self.rest_button = tkinter.Button(self, text='Reset', command=reset_markers)
+        self.process_clips = tkinter.Button(self, text='Finish and process marked clips', command=process_clips)
+        self.process_clips.grid(column=0, row=8, columnspan=2)
+
+        status_label = tkinter.Label(self, text=u'Current status')
+        status_label.config(font=("Courier", 16))
+        status_label.grid(column=0, row=1, columnspan=2)
+        self.info_label = tkinter.Label(self, text='Ready to mark clips...', fg="white", bg="steel blue", pady=10)
+        self.info_label.grid(column=0, row=2, sticky='EW', columnspan=2)
+        spacer_label = tkinter.Label(self, text=" ")
+        spacer_label.grid(column=0, row=3)
+        spacer_label1 = tkinter.Label(self, text=" ")
+        spacer_label1.grid(column=0, row=4)
+        spacer_label2 = tkinter.Label(self, text=" ")
+        spacer_label2.grid(column=0, row=5)
+        spacer_label3 = tkinter.Label(self, text=" ")
+        spacer_label3.grid(column=0, row=7, columnspan=2, sticky='EW')
 
         self.grid_columnconfigure(0, weight=1)
         self.resizable(False, False)
@@ -129,7 +177,3 @@ class TkInterface(tkinter.Tk):
 app = TkInterface(None)
 app.title("Clip Master")
 app.mainloop()
-
-
-print("Time in is " + timeIn + " and time out is " + timeOut)
-print("file is " + currentFile)
