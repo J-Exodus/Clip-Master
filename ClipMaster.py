@@ -1,3 +1,31 @@
+# ===========================================================================================
+# Title: Clip Master
+# Version: 0.8
+# Author: J-Exodus
+# Python Version: Tested on python 3.6 Arch Linux OS
+# ===========================================================================================
+#
+# Below are the user changeable parameters for Clip Master
+# Ensure you have read the README.txt for correct setup of your VLC player
+
+# Username and password to access the VLC web interface.
+USER_NAME = ''
+PASSWORD = 'password'
+
+# File path for videos being processed, in relation to your home folder.
+IN_PATH = '/Videos/'
+
+# File path for processed clips to be saved, in relation to your home folder.
+OUT_PATH = '/Videos/'
+
+# If you wish to have your processed videos moved to another folder, change the option below to True
+# If true, set the location to move your processed videos, in relation to your home folder.
+MOVE_PROCESSED = True
+MOVE_PATH = '/Videos/processed/'
+
+# ============================================================================================
+# ============================================================================================
+
 from os.path import expanduser
 import os
 import subprocess
@@ -17,7 +45,7 @@ def get_info():
     filename = ''
 
     s = requests.Session()
-    s.auth = ('', 'password')  # username blank, password is "password"
+    s.auth = (USER_NAME, PASSWORD)  # username blank, password is "password"
 
     try:
         r = s.get('http://localhost:8080/requests/status.xml', verify=False)
@@ -139,15 +167,19 @@ def process_clips():
     global clip_name
 
     home = expanduser('~')
-    inPath = home + '/Videos/'
-    outPath = home + '/Videos/'
+    in_path = home + IN_PATH
+    out_path = home + OUT_PATH
 
     lines = [line.rstrip('\n') for line in open(home + '/cut_list.txt')]
     total_lines = len(lines) - 4
     x = 0
 
     while x <= total_lines:
-        subprocess.call(['ffmpeg', '-i', inPath + lines[x], '-ss', lines[x + 2], '-t', lines[x + 3], outPath + lines[x + 1] + ".mp4"])
+        subprocess.call(['ffmpeg', '-i', in_path + lines[x], '-ss', lines[x + 2], '-t', lines[x + 3], out_path + lines[x + 1] + ".mp4"])
+
+        if MOVE_PROCESSED:
+            os.rename(home + IN_PATH + lines[x], home + OUT_PATH + lines[x])
+
         x = x + 4
 
     os.remove(home + '/cut_list.txt')
