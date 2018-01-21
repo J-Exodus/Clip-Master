@@ -31,6 +31,14 @@ parameters are not set, it is unlikely the program will work.
 - Once all clips are marked, click the 'Finish and process marked clips' button.
 - Sit back and chill while all your clips are extracted.
 
+### Dependencies
+
+To use this program, you will need to install the `requests` module.  This can be achieved by running the following command:
+    `python -m pip install requests`
+
+Information on the requests module can be found at: http://www.python-requests.org/en/latest/
+
+
 ### Things to do...
 
 This project is in early development and has known flaws. Items to be worked on in the near future include:
