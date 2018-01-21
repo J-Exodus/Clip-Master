@@ -28,6 +28,7 @@ MOVE_PATH = '/Videos/processed/'
 
 from os.path import expanduser
 import os
+import sys
 import subprocess
 import tkinter
 import requests
@@ -37,6 +38,20 @@ currentFile = ''
 timeIn = '0'
 timeOut = '0'
 clip_name = ''
+
+
+def settings_check():
+    home = expanduser('~')
+    if not os.path.exists(home + IN_PATH):
+        sys.exit("Source path given for media does not exist. Please ensure the user parameters are set correctly.")
+
+    if not os.path.exists(home + OUT_PATH):
+        os.makedirs(home + OUT_PATH)
+
+    if not os.path.exists(home + MOVE_PATH):
+        os.makedirs(home + MOVE_PATH)
+
+    print("Settings check complete")
 
 
 def get_info():
@@ -145,7 +160,8 @@ def mark_clip():
         elif mark_in[0] == 0:
             info_msg = "Clip start position marked at {0} mins, {1} seconds.".format(mark_in[1], mark_in[2])
         else:
-            info_msg = "Clip start position marked at {0} hours, {1} mins, {2} seconds.".format(mark_in[0], mark_in[1], mark_in[2])
+            info_msg = "Clip start position marked at {0} hours, {1} mins, {2} seconds.".format(mark_in[0],
+                                                                                                mark_in[1], mark_in[2])
         app.info_label.config(text=info_msg)
         app.rest_button.grid(column=0, row=6, sticky='W', padx=20)
     else:
@@ -175,7 +191,8 @@ def process_clips():
     x = 0
 
     while x <= total_lines:
-        subprocess.call(['ffmpeg', '-i', in_path + lines[x], '-ss', lines[x + 2], '-t', lines[x + 3], out_path + lines[x + 1] + ".mp4"])
+        subprocess.call(['ffmpeg', '-i', in_path + lines[x], '-ss', lines[x + 2], '-t', lines[x + 3], out_path +
+                         lines[x + 1] + ".mp4"])
 
         if MOVE_PROCESSED:
             os.rename(home + IN_PATH + lines[x], home + OUT_PATH + lines[x])
@@ -187,6 +204,7 @@ def process_clips():
 
 class TkInterface(tkinter.Tk):
     def __init__(self, parent):
+        settings_check()
         tkinter.Tk.__init__(self, parent)
         self.parent = parent
         self.initialise()
