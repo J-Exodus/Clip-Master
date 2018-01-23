@@ -34,35 +34,70 @@ import tkinter
 import requests
 import xml.etree.ElementTree as ElmTree
 
-
+# set global variables for process tracking
 currentFile = ''
 timeIn = '0'
 timeOut = '0'
 clip_name = ''
 
 
-def settings_check():
-    home = expanduser('~')
+# Checks the user setting have been set up correctly.  Creates output dir if they do not exist.
+def settings_check(tkapp):
+
+    home = expanduser('~')      # Set home directory location
+
+    # Check input source path exists.  If not, exit program.
     if not os.path.exists(home + IN_PATH):
         sys.exit("Source path given for media does not exist. Please ensure the user parameters are set correctly.")
 
+    # If clip output path doesn't exist, create it.
     if not os.path.exists(home + OUT_PATH):
         os.makedirs(home + OUT_PATH)
 
-    if not os.path.exists(home + MOVE_PATH):
+    # If processed videos are to be moved and the path doesn't exist, create it.
+    if not os.path.exists(home + MOVE_PATH) and MOVE_PROCESSED:
         os.makedirs(home + MOVE_PATH)
 
-    print("Settings check complete")
+    # If a cut list file already exists, check to append or overwrite it.
+    if os.path.isfile(home + '/cut_list.txt'):
+        # display warning that list exists. ask to append or delete.
+
+        tkapp.info_label.config(text='A list for processing already exists.\r\r Do you want to delete the existing\r'
+                                'list or add to it?')
+        tkapp.delete_button.grid(column=1, row=6, padx=20)
+        tkapp.add_button.grid(column=0, row=6, sticky='W', padx=20)
+    else:
+        tkapp.mark_button.grid(column=1, row=6, padx=20)
+        tkapp.info_label.config(text='Ready to mark clips...')
+        tkapp.process_clips.grid(column=0, row=8, columnspan=2)
 
 
+# Set tkinter buttons after delete of cut list
+def set_display():
+
+    app.delete_button.grid_forget()
+    app.add_button.grid_forget()
+    app.mark_button.grid(column=1, row=6, padx=20)
+    app.info_label.config(text='Ready to mark clips...')
+    app.process_clips.grid(column=0, row=8, columnspan=2)
+
+
+# Delete existing cut list
+def del_list():
+    home = expanduser('~')
+    os.remove(home + '/cut_list.txt')
+    set_display()
+
+
+# Pull info from VLC web interface and set variables from that data
 def get_info():
 
-    global timeIn
     filename = ''
 
     s = requests.Session()
     s.auth = (USER_NAME, PASSWORD)  # username blank, password is "password"
 
+    # check connection to the VLC web interface
     try:
         r = s.get('http://localhost:8080/requests/status.xml', verify=False)
 
@@ -86,6 +121,7 @@ def get_info():
     return [filename, current_time]
 
 
+# Format times to the required input format for ffmpeg or for display
 def format_times(seconds, rtn_type):
     m, s = divmod(int(seconds), 60)
     h, m = divmod(m, 60)
@@ -100,11 +136,9 @@ def format_times(seconds, rtn_type):
         return h + ":" + m + ":" + s
 
 
+# Write data to cut_list.txt (file title, clip start time, clip duration, clip title)
 def write_to_file():
 
-    global currentFile
-    global timeIn
-    global timeOut
     global clip_name
 
     clip_name = app.entry.get()
@@ -122,12 +156,12 @@ def write_to_file():
 
     app.rest_button.grid_forget()
 
-    app.info_label.config(text='Clip successfully saved for processing.')
-    app.info_label.after(3000, app.info_label.config(text='Ready to mark clips...'))
+    app.info_label.config(text='Clip successfully saved for processing.\r\rReady to mark next clip...')
 
     reset_markers()
 
 
+# Reset variables to commence new clip mark
 def reset_markers():
     global timeIn
     global timeOut
@@ -140,12 +174,11 @@ def reset_markers():
     clip_name = ''
 
     app.rest_button.grid_forget()
-    app.info_label.config(text='Ready to mark clips...')
 
 
+# Mark clip position and set variables
 def mark_clip():
     global timeOut
-    global clip_name
     global timeIn
     global currentFile
 
@@ -176,12 +209,8 @@ def mark_clip():
         app.info_label.config(text='Enter a clip name and press the save button.')
 
 
+# Use the data in cut_list.txt to send commands to ffmpeg to process clips
 def process_clips():
-
-    global currentFile
-    global timeIn
-    global timeOut
-    global clip_name
 
     home = expanduser('~')
     in_path = home + IN_PATH
@@ -205,9 +234,18 @@ def process_clips():
 
 class TkInterface(tkinter.Tk):
     def __init__(self, parent):
-        settings_check()
         tkinter.Tk.__init__(self, parent)
         self.parent = parent
+
+        self.delete_button = tkinter.Button(text='Delete List', command=del_list)
+        self.add_button = tkinter.Button(text="Add to List", command=set_display)
+        self.entry = tkinter.Entry(self)
+        self.mark_button = tkinter.Button(self, text=u"Mark Clip", command=mark_clip)
+        self.save_button = tkinter.Button(self, text=u"Save clip for processing", command=write_to_file)
+        self.rest_button = tkinter.Button(self, text='Reset', command=reset_markers)
+        self.process_clips = tkinter.Button(self, text='Finish and process marked clips', command=process_clips)
+        self.info_label = tkinter.Label(self, text='Ready to mark clips...', fg="white", bg="steel blue", pady=10)
+
         self.initialise()
 
     def initialise(self):
@@ -216,23 +254,11 @@ class TkInterface(tkinter.Tk):
         self.geometry('{}x{}'.format(width, height))
         self.grid()
 
-        self.entry = tkinter.Entry(self)
-        self.entry.grid(column=0, row=4, sticky='EW', pady=5, columnspan=2)
-        self.entry.grid_forget()
-
-        self.mark_button = tkinter.Button(self, text=u"Mark Clip", command=mark_clip)
-        self.mark_button.grid(column=1, row=6, padx=20)
-
-        self.save_button = tkinter.Button(self, text=u"Save clip for processing", command=write_to_file)
-        self.rest_button = tkinter.Button(self, text='Reset', command=reset_markers)
-        self.process_clips = tkinter.Button(self, text='Finish and process marked clips', command=process_clips)
-        self.process_clips.grid(column=0, row=8, columnspan=2)
-
         status_label = tkinter.Label(self, text=u'Current status')
         status_label.config(font=("Courier", 16))
         status_label.grid(column=0, row=1, columnspan=2)
-        self.info_label = tkinter.Label(self, text='Ready to mark clips...', fg="white", bg="steel blue", pady=10)
         self.info_label.grid(column=0, row=2, sticky='EW', columnspan=2)
+
         spacer_label = tkinter.Label(self, text=" ")
         spacer_label.grid(column=0, row=3)
         spacer_label1 = tkinter.Label(self, text=" ")
@@ -244,6 +270,8 @@ class TkInterface(tkinter.Tk):
 
         self.grid_columnconfigure(0, weight=1)
         self.resizable(False, False)
+
+        settings_check(self)
 
 
 app = TkInterface(None)
