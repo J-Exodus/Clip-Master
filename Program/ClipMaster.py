@@ -1,9 +1,17 @@
-# ===========================================================================================
+from os.path import expanduser
+import os
+import sys
+import subprocess
+import tkinter
+import requests
+import xml.etree.ElementTree as ElmTree
+
+# ==============================================================================
 # Title: Clip Master
 # Version: 0.9
 # Author: J-Exodus
 # Python Version: Tested on python 3.6 Arch Linux OS
-# ===========================================================================================
+# ==============================================================================
 #
 # Below are the user changeable parameters for Clip Master
 # Ensure you have read the README.txt for correct setup of your VLC player
@@ -18,21 +26,16 @@ IN_PATH = '/Videos/'
 # File path for processed clips to be saved, in relation to your home folder.
 OUT_PATH = '/Videos/'
 
-# If you wish to have your processed videos moved to another folder, change the option below to True
-# If true, set the location to move your processed videos, in relation to your home folder.
+# If you wish to have your processed videos moved to another folder, change the
+# option below to True
+# If true, set the location to move your processed videos, in relation to your
+# home folder.
 MOVE_PROCESSED = True
 MOVE_PATH = '/Videos/processed/'
 
-# ============================================================================================
-# ============================================================================================
+# ==============================================================================
+# ==============================================================================
 
-from os.path import expanduser
-import os
-import sys
-import subprocess
-import tkinter
-import requests
-import xml.etree.ElementTree as ElmTree
 
 # set global variables for process tracking
 currentFile = ''
@@ -41,20 +44,22 @@ timeOut = '0'
 clip_name = ''
 
 
-# Checks the user setting have been set up correctly.  Creates output dir if they do not exist.
+# Checks the user setting have been set up correctly.  Creates output dir if
+# they do not exist.
 def settings_check(tkapp):
 
     home = expanduser('~')      # Set home directory location
 
     # Check input source path exists.  If not, exit program.
     if not os.path.exists(home + IN_PATH):
-        sys.exit("Source path given for media does not exist. Please ensure the user parameters are set correctly.")
+        sys.exit("Source path given for media does not exist. Please ensure the\
+                 user parameters are set correctly.")
 
     # If clip output path doesn't exist, create it.
     if not os.path.exists(home + OUT_PATH):
         os.makedirs(home + OUT_PATH)
 
-    # If processed videos are to be moved and the path doesn't exist, create it.
+    # If processed videos are to be moved & the path doesn't exist, create it.
     if not os.path.exists(home + MOVE_PATH) and MOVE_PROCESSED:
         os.makedirs(home + MOVE_PATH)
 
@@ -62,7 +67,8 @@ def settings_check(tkapp):
     if os.path.isfile(home + '/cut_list.txt'):
         # display warning that list exists. ask to append or delete.
 
-        tkapp.info_label.config(text='A list for processing already exists.\r\r Do you want to delete the existing\r'
+        tkapp.info_label.config(text='A list for processing already exists.\r\r\
+                                Do you want to delete the existing\r'
                                 'list or add to it?')
         tkapp.delete_button.grid(column=1, row=6, padx=20)
         tkapp.add_button.grid(column=0, row=6, sticky='W', padx=20)
@@ -102,10 +108,12 @@ def get_info():
         r = s.get('http://localhost:8080/requests/status.xml', verify=False)
 
         if'401 Client error' in r.text:
-            print('Web Interface Error: Check web interface settings and password.')
+            print('Web Interface Error: Check web interface settings and \
+                  password.')
             return
     except Exception:
-        print("Can not connect with VLC web interface. Please check settings as described in the README.txt file.")
+        print("Can not connect with VLC web interface. Please check settings as \
+              described in the README.txt file.")
         return
 
     root = ElmTree.fromstring(r.content)
@@ -136,7 +144,7 @@ def format_times(seconds, rtn_type):
         return h + ":" + m + ":" + s
 
 
-# Write data to cut_list.txt (file title, clip start time, clip duration, clip title)
+# Write data to cut_list.txt (title, start time, clip duration, clip title)
 def write_to_file():
 
     global clip_name
@@ -151,12 +159,14 @@ def write_to_file():
     rtn = '\r'
 
     cut_list = open(home + "/cut_list.txt", 'a')
-    cut_list.write(currentFile + rtn + clip_name + rtn + timeIn + rtn + timeOut + rtn)
+    cut_list.write(currentFile + rtn + clip_name + rtn + timeIn + rtn +
+                   timeOut + rtn)
     cut_list.close()
 
     app.rest_button.grid_forget()
 
-    app.info_label.config(text='Clip successfully saved for processing.\r\rReady to mark next clip...')
+    app.info_label.config(text='Clip successfully saved for processing.\r\r\
+                          Ready to mark next clip...')
 
     reset_markers()
 
@@ -190,12 +200,14 @@ def mark_clip():
         mark_in = format_times(file_data[1], "base")
 
         if mark_in[0] == 0 and mark_in[1] == 0:
-            info_msg = "Clip start position marked at {0} seconds.".format(mark_in[2])
+            info_msg = "Clip start position marked at {0} \
+                        seconds.".format(mark_in[2])
         elif mark_in[0] == 0:
-            info_msg = "Clip start position marked at {0} mins, {1} seconds.".format(mark_in[1], mark_in[2])
+            info_msg = "Clip start position marked at {0} mins, \
+                        {1} seconds.".format(mark_in[1], mark_in[2])
         else:
-            info_msg = "Clip start position marked at {0} hours, {1} mins, {2} seconds.".format(mark_in[0],
-                                                                                                mark_in[1], mark_in[2])
+            info_msg = "Clip start position marked at {0} hours, {1} mins, {2} \
+                       seconds.".format(mark_in[0], mark_in[1], mark_in[2])
         app.info_label.config(text=info_msg)
         app.rest_button.grid(column=0, row=6, sticky='W', padx=20)
     else:
@@ -206,7 +218,7 @@ def mark_clip():
         app.entry.grid(column=0, row=4, sticky='EW', columnspan=2)
         app.entry.focus_set()
         app.save_button.grid(column=1, row=6, padx=20)
-        app.info_label.config(text='Enter a clip name and press the save button.')
+        app.info_label.config(text='Enter clip name & press the save button.')
 
 
 # Use the data in cut_list.txt to send commands to ffmpeg to process clips
@@ -221,8 +233,9 @@ def process_clips():
     x = 0
 
     while x <= total_lines:
-        subprocess.call(['ffmpeg', '-i', in_path + lines[x], '-ss', lines[x + 2], '-t', lines[x + 3], out_path +
-                         lines[x + 1] + ".mp4"])
+        subprocess.call(['ffmpeg', '-i', in_path + lines[x], '-ss',
+                        lines[x + 2], '-t', lines[x + 3], out_path +
+                        lines[x + 1] + ".mp4"])
 
         if MOVE_PROCESSED:
             os.rename(home + IN_PATH + lines[x], home + OUT_PATH + lines[x])
@@ -237,14 +250,22 @@ class TkInterface(tkinter.Tk):
         tkinter.Tk.__init__(self, parent)
         self.parent = parent
 
-        self.delete_button = tkinter.Button(text='Delete List', command=del_list)
-        self.add_button = tkinter.Button(text="Add to List", command=set_display)
+        self.delete_button = tkinter.Button(text='Delete List',
+                                            command=del_list)
+        self.add_button = tkinter.Button(text="Add to List",
+                                         command=set_display)
         self.entry = tkinter.Entry(self)
-        self.mark_button = tkinter.Button(self, text=u"Mark Clip", command=mark_clip)
-        self.save_button = tkinter.Button(self, text=u"Save clip for processing", command=write_to_file)
-        self.rest_button = tkinter.Button(self, text='Reset', command=reset_markers)
-        self.process_clips = tkinter.Button(self, text='Finish and process marked clips', command=process_clips)
-        self.info_label = tkinter.Label(self, text='Ready to mark clips...', fg="white", bg="steel blue", pady=10)
+        self.mark_button = tkinter.Button(self, text=u"Mark Clip",
+                                          command=mark_clip)
+        self.save_button = tkinter.Button(self, text=u"Save clip for \
+                                          processing", command=write_to_file)
+        self.rest_button = tkinter.Button(self, text='Reset',
+                                          command=reset_markers)
+        self.process_clips = tkinter.Button(self, text='Finish and process \
+                                            marked clips',
+                                            command=process_clips)
+        self.info_label = tkinter.Label(self, text='Ready to mark clips...',
+                                        fg="white", bg="steel blue", pady=10)
 
         self.initialise()
 
