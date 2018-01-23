@@ -52,8 +52,8 @@ def settings_check(tkapp):
 
     # Check input source path exists.  If not, exit program.
     if not os.path.exists(home + IN_PATH):
-        sys.exit("Source path given for media does not exist. Please ensure the\
-                 user parameters are set correctly.")
+        sys.exit("Source path given for media does not exist. Please ensure "
+                 "the user parameters are set correctly.")
 
     # If clip output path doesn't exist, create it.
     if not os.path.exists(home + OUT_PATH):
@@ -67,8 +67,8 @@ def settings_check(tkapp):
     if os.path.isfile(home + '/cut_list.txt'):
         # display warning that list exists. ask to append or delete.
 
-        tkapp.info_label.config(text='A list for processing already exists.\r\r\
-                                Do you want to delete the existing\r'
+        tkapp.info_label.config(text='A list for processing already exists.\r'
+                                '\rDo you want to delete the existing\r'
                                 'list or add to it?')
         tkapp.delete_button.grid(column=1, row=6, padx=20)
         tkapp.add_button.grid(column=0, row=6, sticky='W', padx=20)
@@ -108,12 +108,12 @@ def get_info():
         r = s.get('http://localhost:8080/requests/status.xml', verify=False)
 
         if'401 Client error' in r.text:
-            print('Web Interface Error: Check web interface settings and \
-                  password.')
+            print('Web Interface Error: Check web interface settings and '
+                  'password.')
             return
     except Exception:
-        print("Can not connect with VLC web interface. Please check settings as \
-              described in the README.txt file.")
+        print("Can not connect with VLC web interface. Please check settings "
+              "as described in the README.txt file.")
         return
 
     root = ElmTree.fromstring(r.content)
@@ -165,8 +165,8 @@ def write_to_file():
 
     app.rest_button.grid_forget()
 
-    app.info_label.config(text='Clip successfully saved for processing.\r\r\
-                          Ready to mark next clip...')
+    app.info_label.config(text='Clip successfully saved for processing.\r\r'
+                          'Ready to mark next clip...')
 
     reset_markers()
 
@@ -206,8 +206,8 @@ def mark_clip():
             info_msg = "Clip start position marked at {0} mins, \
                         {1} seconds.".format(mark_in[1], mark_in[2])
         else:
-            info_msg = "Clip start position marked at {0} hours, {1} mins, {2} \
-                       seconds.".format(mark_in[0], mark_in[1], mark_in[2])
+            info_msg = "Clip start position marked at {0} hours, {1} mins, {2}"
+            " seconds.".format(mark_in[0], mark_in[1], mark_in[2])
         app.info_label.config(text=info_msg)
         app.rest_button.grid(column=0, row=6, sticky='W', padx=20)
     else:
@@ -257,12 +257,12 @@ class TkInterface(tkinter.Tk):
         self.entry = tkinter.Entry(self)
         self.mark_button = tkinter.Button(self, text=u"Mark Clip",
                                           command=mark_clip)
-        self.save_button = tkinter.Button(self, text=u"Save clip for \
-                                          processing", command=write_to_file)
+        self.save_button = tkinter.Button(self, text=u"Save clip for "
+                                          "processing", command=write_to_file)
         self.rest_button = tkinter.Button(self, text='Reset',
                                           command=reset_markers)
-        self.process_clips = tkinter.Button(self, text='Finish and process \
-                                            marked clips',
+        self.process_clips = tkinter.Button(self, text='Finish and process '
+                                            'marked clips',
                                             command=process_clips)
         self.info_label = tkinter.Label(self, text='Ready to mark clips...',
                                         fg="white", bg="steel blue", pady=10)
