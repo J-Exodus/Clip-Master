@@ -1,0 +1,4 @@
+subprocess
+tkinter
+requests
+xml.etree.ElementTree
