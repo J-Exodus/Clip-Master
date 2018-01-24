@@ -112,9 +112,8 @@ def get_info():
                   'password.')
             return
     except Exception:
-        print("Can not connect with VLC web interface. Please check settings "
-              "as described in the README.txt file.")
-        return
+        sys.exit("Can not connect with VLC web interface. Please check "
+                 "settings as described in the README.txt file.")
 
     root = ElmTree.fromstring(r.content)
 
@@ -150,6 +149,7 @@ def write_to_file():
     global clip_name
 
     clip_name = app.entry.get()
+#    clip_name = clip_name.replace(' ', '_')
     app.entry.delete(0, 'end')
     app.save_button.grid_forget()
     app.entry.grid_forget()
@@ -165,7 +165,7 @@ def write_to_file():
 
     app.rest_button.grid_forget()
 
-    app.info_label.config(text='Clip successfully saved for processing.\r\r'
+    app.info_label.config(text='Clip successfully saved for processing.\r'
                           'Ready to mark next clip...')
 
     reset_markers()
@@ -200,14 +200,15 @@ def mark_clip():
         mark_in = format_times(file_data[1], "base")
 
         if mark_in[0] == 0 and mark_in[1] == 0:
-            info_msg = "Clip start position marked at {0} \
-                        seconds.".format(mark_in[2])
+            info_msg = ('Clip start position marked at {0} '
+                        'seconds.'.format(mark_in[2]))
         elif mark_in[0] == 0:
-            info_msg = "Clip start position marked at {0} mins, \
-                        {1} seconds.".format(mark_in[1], mark_in[2])
+            info_msg = ('Clip start position marked at {0} mins, {1} '
+                        'seconds.'.format(mark_in[1], mark_in[2]))
         else:
-            info_msg = "Clip start position marked at {0} hours, {1} mins, {2}"
-            " seconds.".format(mark_in[0], mark_in[1], mark_in[2])
+            info_msg = ('Clip start position marked at {0} hours, {1} mins, '
+                        '{2} seconds.'.format(mark_in[0], mark_in[1],
+                                              mark_in[2]))
         app.info_label.config(text=info_msg)
         app.rest_button.grid(column=0, row=6, sticky='W', padx=20)
     else:
@@ -233,9 +234,13 @@ def process_clips():
     x = 0
 
     while x <= total_lines:
+        file_ext = lines[0].rsplit('.', 1)
+        f_type = '.' + file_ext[1]
+
+        print(f_type)
         subprocess.call(['ffmpeg', '-i', in_path + lines[x], '-ss',
                         lines[x + 2], '-t', lines[x + 3], out_path +
-                        lines[x + 1] + ".mp4"])
+                        lines[x + 1] + f_type])
 
         if MOVE_PROCESSED:
             os.rename(home + IN_PATH + lines[x], home + OUT_PATH + lines[x])
