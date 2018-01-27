@@ -1,10 +1,11 @@
-from os.path import expanduser
 import os
-import sys
 import subprocess
+import sys
 import tkinter
-import requests
 import xml.etree.ElementTree as ElmTree
+from os.path import expanduser
+
+import requests
 
 # ==============================================================================
 # Title: Clip Master
